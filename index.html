@@ -154,7 +154,7 @@
                                     <th class="p-3 md:p-4">Téléphone</th>
                                     <th class="p-3 md:p-4" x-show="userRole === 'doctor'">Coût Total / Payé</th>
                                     <th class="p-3 md:p-4" x-show="userRole === 'doctor'">Reste (Dette)</th>
-                                    <th class="p-3 md:p-4 text-center">Actions</th>
+                                    <th class="p-3 md:p-4 text-center">Actions & Modification</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y text-xs md:text-sm">
@@ -170,8 +170,9 @@
                                             <span :class="(patient.totalCost - getPatientPaidTotal(patient)) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="px-2.5 py-1 rounded-full text-xs font-bold" x-text="((patient.totalCost || 0) - getPatientPaidTotal(patient)) + ' DZD'"></span>
                                         </td>
                                         <td class="p-3 md:p-4 text-center space-x-1">
-                                            <button x-show="userRole === 'doctor'" @click="openPaymentsModal(patient)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-emerald-700">💳 الملف والأقساط</button>
-                                            <button @click="deletePatient(patient.id)" class="bg-red-500 text-white px-2 py-1.5 rounded-md text-xs hover:bg-red-600">🗑️ Supprimer</button>
+                                            <button x-show="userRole === 'doctor'" @click="openPaymentsModal(patient)" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-emerald-700">💳 الأقساط</button>
+                                            <button @click="editPatient(patient)" class="bg-amber-500 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-amber-600">✏️ Modifier</button>
+                                            <button @click="deletePatient(patient.id)" class="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600">🗑️ Supprimer</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -227,7 +228,7 @@
                                         <th class="p-3">Heure & Patient</th>
                                         <th class="p-3">Téléphone</th>
                                         <th class="p-3">Acte Médical</th>
-                                        <th class="p-3 text-center">WhatsApp & Actions</th>
+                                        <th class="p-3 text-center">Actions & Modification</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y text-xs">
@@ -237,7 +238,8 @@
                                             <td class="p-3 text-gray-600" x-text="app.patientPhone || 'N/A'"></td>
                                             <td class="p-3 text-gray-600" x-text="app.service"></td>
                                             <td class="p-3 text-center space-x-1">
-                                                <button @click="sendWhatsAppRappel(app)" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-bold">📲 Rappel WhatsApp</button>
+                                                <button @click="sendWhatsAppRappel(app)" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-bold">📲 WhatsApp</button>
+                                                <button @click="editAppointment(app)" class="bg-amber-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-amber-600">✏️ Modifier</button>
                                                 <button @click="deleteAppointment(app.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">🗑️ Annuler</button>
                                             </td>
                                         </tr>
@@ -257,7 +259,7 @@
 
     <!-- Modals -->
 
-    <!-- 💬 Modal الدردشة مع صوت التنبيه -->
+    <!-- 💬 Modal الدردشة -->
     <div x-show="showChatModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col h-[500px]">
             <div class="flex justify-between items-center border-b pb-3">
@@ -271,7 +273,10 @@
                         <div :class="msg.sender === userRole ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 border'" class="inline-block p-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative group">
                             <div class="font-bold text-[10px] opacity-75 mb-1" x-text="msg.senderName"></div>
                             <div x-text="msg.text"></div>
-                            <button @click="deleteMessage(msg.id)" class="ml-2 text-red-300 hover:text-red-100 font-bold text-[10px]" title="Supprimer">🗑️ حذف</button>
+                            <div class="mt-1 flex gap-2 justify-end text-[10px]">
+                                <button @click="editMessage(msg)" class="text-amber-200 hover:text-amber-100 font-bold">✏️ تعديل</button>
+                                <button @click="deleteMessage(msg.id)" class="text-red-300 hover:text-red-100 font-bold">🗑️ حذف</button>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -382,7 +387,7 @@
                         this.userRole = 'assistant';
                         this.currentUserEmail = 'assistant@dentist.com';
                         this.isLoggedIn = true;
-                        this.currentTab = 'appointments'; // المساعدة تفتح على المواعيد مباشرة
+                        this.currentTab = 'appointments';
                         this.initApp();
                     } 
                     else {
@@ -422,16 +427,28 @@
                         
                         // إصدار صوت تنبيه عند وصول رسالة جديدة
                         if (this.lastMessageCount > 0 && newMsgs.length > this.lastMessageCount) {
-                            this.playNotificationSound();
+                            this.playBeepSound();
                         }
                         this.lastMessageCount = newMsgs.length;
                         this.messages = newMsgs;
                     });
                 },
 
-                playNotificationSound() {
-                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                    audio.play().catch(e => console.log("Audio play blocked", e));
+                playBeepSound() {
+                    try {
+                        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(800, ctx.currentTime);
+                        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.2);
+                    } catch (e) {
+                        console.log("Audio not allowed", e);
+                    }
                 },
 
                 sendMessage() {
@@ -442,7 +459,17 @@
                             senderName: this.userRole === 'doctor' ? 'Médecin 👨‍⚕️' : 'Secrétaire 📋',
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                        this.playBeepSound(); // صوت عند إرسال الرسالة
                         this.newMessageText = '';
+                    }
+                },
+
+                editMessage(msg) {
+                    const newText = prompt("Modifier le message (تعديل الرسالة):", msg.text);
+                    if (newText && newText.trim() !== '') {
+                        db.collection('messages').doc(msg.id).update({
+                            text: newText
+                        });
                     }
                 },
 
@@ -472,6 +499,23 @@
                             totalCost: Number(totalCost) || 0,
                             payments: [],
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                },
+
+                editPatient(patient) {
+                    const newName = prompt("Nouveau nom du patient (اسم المريض):", patient.name);
+                    const newPhone = prompt("Nouveau téléphone (رقم الهاتف):", patient.phone || '');
+                    let newCost = patient.totalCost;
+                    if (this.userRole === 'doctor') {
+                        newCost = prompt("Nouveau coût total (المبلغ الإجمالي):", patient.totalCost || 0);
+                    }
+
+                    if (newName) {
+                        db.collection('patients').doc(patient.id).update({
+                            name: newName,
+                            phone: newPhone || '',
+                            totalCost: Number(newCost) || 0
                         });
                     }
                 },
@@ -610,6 +654,24 @@
                     }
                 },
 
+                editAppointment(app) {
+                    const newName = prompt("Nom du patient:", app.patientName);
+                    const newDate = prompt("Date (AAAA-MM-JJ):", app.date);
+                    const newTime = prompt("Heure:", app.time || '10:00');
+                    const newPhone = prompt("Téléphone:", app.patientPhone || '');
+                    const newService = prompt("Acte médical:", app.service || 'Consultation');
+
+                    if (newName && newDate) {
+                        db.collection('appointments').doc(app.id).update({
+                            patientName: newName,
+                            date: newDate,
+                            time: newTime,
+                            patientPhone: newPhone || '',
+                            service: newService || 'Consultation'
+                        });
+                    }
+                },
+
                 deleteAppointment(id) {
                     if (confirm("Voulez-vous annuler ce rendez-vous ?")) {
                         db.collection('appointments').doc(id).delete();
@@ -626,3 +688,4 @@
     </script>
 </body>
 </html>
+
