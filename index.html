@@ -5,23 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cabinet de médecine et de chirurgie dentaire</title>
     
-    <!-- Paramètres PWA -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Cabinet Dentaire">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2818/2818366.png">
-    
-    <!-- Web App Manifest -->
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Cabinet de médecine et de chirurgie dentaire","short_name":"Cabinet Dentaire","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0f172a","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/2818/2818366.png","sizes":"512x512","type":"image/png"}]}'>
-
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- SheetJS CDN (Export Excel) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
     
@@ -84,7 +71,6 @@
                     <button x-show="userRole === 'doctor'" @click="currentTab = 'dashboard'" :class="currentTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'" class="w-full text-left px-4 py-2.5 rounded-lg font-medium transition">Tableau de bord</button>
                     <button @click="currentTab = 'patients'" :class="currentTab === 'patients' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'" class="w-full text-left px-4 py-2.5 rounded-lg font-medium transition">Patients & Dossiers</button>
                     <button @click="currentTab = 'appointments'" :class="currentTab === 'appointments' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'" class="w-full text-left px-4 py-2.5 rounded-lg font-medium transition">Rendez-vous & Agenda</button>
-                    <button x-show="userRole === 'doctor'" @click="currentTab = 'finance'" :class="currentTab === 'finance' ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'" class="w-full text-left px-4 py-2.5 rounded-lg font-medium transition">Comptabilité & Finances</button>
                 </nav>
             </div>
             <div class="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
@@ -105,13 +91,8 @@
                 </div>
             </header>
 
-            <!-- Indicateur de chargement -->
-            <div x-show="loadingData" class="p-4 bg-amber-50 text-amber-800 text-center text-sm font-semibold">
-                Synchronisation des données avec le Cloud... ☁️
-            </div>
-
             <!-- Vues dynamiques -->
-            <main class="p-4 md:p-6" x-show="!loadingData">
+            <main class="p-4 md:p-6">
                 
                 <!-- 1. Vue Tableau de bord -->
                 <div x-show="currentTab === 'dashboard' && userRole === 'doctor'" class="space-y-6">
@@ -192,17 +173,11 @@
                     </div>
                 </div>
 
-                <!-- 4. Vue Finances -->
-                <div x-show="currentTab === 'finance' && userRole === 'doctor'" class="space-y-4">
-                    <h2 class="text-base md:text-xl font-bold text-slate-800">Comptabilité & Finances</h2>
-                    <p class="text-sm text-gray-600">Suivi des transactions du cabinet.</p>
-                </div>
-
             </main>
         </div>
     </div>
 
-    <!-- Script منطق التطبيق وربط Firebase -->
+    <!-- Script -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyB1oZQ-oDLy0-3HUToSM5RFidjvH2B5hlI",
@@ -229,7 +204,6 @@
                 authError: '',
                 loadingAuth: false,
                 currentTab: 'patients',
-                loadingData: false,
                 patients: [],
                 appointments: [],
                 searchQuery: '',
@@ -239,7 +213,6 @@
                     this.authError = '';
                     this.loadingAuth = true;
 
-                    // التحقق من حساب الطبيبة
                     if (this.loginEmail.trim() === 'dentist@gmail.com' && this.loginPassword === '12345678') {
                         this.userRole = 'doctor';
                         this.currentUserEmail = 'dentist@gmail.com';
@@ -247,7 +220,6 @@
                         this.currentTab = 'dashboard';
                         this.initApp();
                     } 
-                    // التحقق من حساب المساعدة
                     else if (this.loginEmail.trim() === 'assistant@dentist.com' && this.loginPassword === 'assistant123') {
                         this.userRole = 'assistant';
                         this.currentUserEmail = 'assistant@dentist.com';
@@ -270,7 +242,6 @@
                     if (this.currentTab === 'dashboard') return 'Tableau de bord';
                     if (this.currentTab === 'patients') return 'Patients & Dossiers';
                     if (this.currentTab === 'appointments') return 'Rendez-vous & Agenda';
-                    if (this.currentTab === 'finance') return 'Comptabilité & Finances';
                     return 'عيادة طب وجراحة الأسنان';
                 },
 
