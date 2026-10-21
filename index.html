@@ -109,7 +109,7 @@
             <!-- Vues dynamiques -->
             <main class="p-4 md:p-6">
                 
-                <!-- 1. Vue Tableau de bord -->
+                <!-- 1. Vue Tableau de bord (Doctor Only) -->
                 <div x-show="currentTab === 'dashboard' && userRole === 'doctor'" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                         <div class="bg-white p-5 rounded-xl shadow-sm border flex items-center justify-between">
@@ -152,9 +152,9 @@
                                 <tr class="bg-slate-50 border-b text-slate-600 text-xs md:text-sm">
                                     <th class="p-3 md:p-4">Patient</th>
                                     <th class="p-3 md:p-4">Téléphone</th>
-                                    <th class="p-3 md:p-4">Coût Total / Payé</th>
-                                    <th class="p-3 md:p-4">Reste (Dette)</th>
-                                    <th class="p-3 md:p-4 text-center">Dossier & Paiements</th>
+                                    <th class="p-3 md:p-4" x-show="userRole === 'doctor'">Coût Total / Payé</th>
+                                    <th class="p-3 md:p-4" x-show="userRole === 'doctor'">Reste (Dette)</th>
+                                    <th class="p-3 md:p-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y text-xs md:text-sm">
@@ -162,15 +162,15 @@
                                     <tr>
                                         <td class="p-3 md:p-4 font-semibold text-slate-800" x-text="patient.name"></td>
                                         <td class="p-3 md:p-4 text-gray-600" x-text="patient.phone || 'N/A'"></td>
-                                        <td class="p-3 md:p-4 text-gray-700 font-medium">
+                                        <td class="p-3 md:p-4 text-gray-700 font-medium" x-show="userRole === 'doctor'">
                                             <span x-text="(patient.totalCost || 0) + ' DZD'"></span> / 
                                             <span class="text-emerald-600 font-bold" x-text="getPatientPaidTotal(patient) + ' DZD'"></span>
                                         </td>
-                                        <td class="p-3 md:p-4">
+                                        <td class="p-3 md:p-4" x-show="userRole === 'doctor'">
                                             <span :class="(patient.totalCost - getPatientPaidTotal(patient)) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" class="px-2.5 py-1 rounded-full text-xs font-bold" x-text="((patient.totalCost || 0) - getPatientPaidTotal(patient)) + ' DZD'"></span>
                                         </td>
                                         <td class="p-3 md:p-4 text-center space-x-1">
-                                            <button @click="openPaymentsModal(patient)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-emerald-700">💳 الملف والأقساط</button>
+                                            <button x-show="userRole === 'doctor'" @click="openPaymentsModal(patient)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-emerald-700">💳 الملف والأقساط</button>
                                             <button @click="deletePatient(patient.id)" class="bg-red-500 text-white px-2 py-1.5 rounded-md text-xs hover:bg-red-600">🗑️ Supprimer</button>
                                         </td>
                                     </tr>
@@ -255,9 +255,9 @@
         </div>
     </div>
 
-    <!-- Modals (النوافذ المنبثقة) -->
+    <!-- Modals -->
 
-    <!-- 💬 Modal الدردشة والرسائل المباشرة -->
+    <!-- 💬 Modal الدردشة مع صوت التنبيه -->
     <div x-show="showChatModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col h-[500px]">
             <div class="flex justify-between items-center border-b pb-3">
@@ -271,7 +271,7 @@
                         <div :class="msg.sender === userRole ? 'bg-blue-600 text-white' : 'bg-white text-slate-800 border'" class="inline-block p-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative group">
                             <div class="font-bold text-[10px] opacity-75 mb-1" x-text="msg.senderName"></div>
                             <div x-text="msg.text"></div>
-                            <button @click="deleteMessage(msg.id)" class="ml-2 text-red-300 hover:text-red-100 font-bold text-[10px]" title="Supprimer la message">🗑️ حذف</button>
+                            <button @click="deleteMessage(msg.id)" class="ml-2 text-red-300 hover:text-red-100 font-bold text-[10px]" title="Supprimer">🗑️ حذف</button>
                         </div>
                     </div>
                 </template>
@@ -284,7 +284,7 @@
         </div>
     </div>
 
-    <!-- 💳 Modal سجل الأقساط والملف المالي للمريض -->
+    <!-- 💳 Modal سجل الأقساط -->
     <div x-show="showPaymentsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-3">
@@ -323,7 +323,7 @@
         </div>
     </div>
 
-    <!-- Script منطق التطبيق وربط Firebase -->
+    <!-- Script -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyB1oZQ-oDLy0-3HUToSM5RFidjvH2B5hlI",
@@ -354,6 +354,7 @@
                 patients: [],
                 appointments: [],
                 messages: [],
+                lastMessageCount: 0,
                 
                 searchQuery: '',
                 showChatModal: false,
@@ -363,7 +364,6 @@
                 selectedPatient: null,
                 newInstallment: { amount: '', date: new Date().toISOString().split('T')[0] },
 
-                // التقويم
                 currentDate: new Date(),
                 selectedDate: new Date(),
 
@@ -382,7 +382,7 @@
                         this.userRole = 'assistant';
                         this.currentUserEmail = 'assistant@dentist.com';
                         this.isLoggedIn = true;
-                        this.currentTab = 'patients';
+                        this.currentTab = 'appointments'; // المساعدة تفتح على المواعيد مباشرة
                         this.initApp();
                     } 
                     else {
@@ -418,8 +418,20 @@
 
                 fetchMessages() {
                     db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
-                        this.messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        const newMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        
+                        // إصدار صوت تنبيه عند وصول رسالة جديدة
+                        if (this.lastMessageCount > 0 && newMsgs.length > this.lastMessageCount) {
+                            this.playNotificationSound();
+                        }
+                        this.lastMessageCount = newMsgs.length;
+                        this.messages = newMsgs;
                     });
+                },
+
+                playNotificationSound() {
+                    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                    audio.play().catch(e => console.log("Audio play blocked", e));
                 },
 
                 sendMessage() {
@@ -452,7 +464,7 @@
                 openPatientModal() {
                     const name = prompt("Nom du patient:");
                     const phone = prompt("Téléphone:");
-                    const totalCost = prompt("Coût total du traitement (DZD):");
+                    const totalCost = this.userRole === 'doctor' ? prompt("Coût total du traitement (DZD):") : 0;
                     if (name) {
                         db.collection('patients').add({
                             name: name,
@@ -470,7 +482,6 @@
                     }
                 },
 
-                // إدارة الأقساط
                 openPaymentsModal(patient) {
                     this.selectedPatient = patient;
                     this.showPaymentsModal = true;
@@ -507,7 +518,6 @@
                     }
                 },
 
-                // المداخيل اليومية
                 todayRevenue() {
                     const todayStr = new Date().toISOString().split('T')[0];
                     let total = 0;
@@ -526,7 +536,6 @@
                     return this.appointments.filter(a => a.date === todayStr).length;
                 },
 
-                // التذكير عبر WhatsApp
                 sendWhatsAppRappel(app) {
                     if (!app.patientPhone) {
                         alert("Le numéro de téléphone du patient est manquant!");
@@ -536,7 +545,6 @@
                     window.open(`https://wa.me/${app.patientPhone}?text=${text}`, '_blank');
                 },
 
-                // التقويم والأجندة
                 changeMonth(delta) {
                     this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + delta, 1);
                 },
