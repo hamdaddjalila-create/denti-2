@@ -98,6 +98,9 @@
             <header class="bg-white shadow-sm border-b h-16 flex items-center justify-between px-4 md:px-6">
                 <h1 class="text-base md:text-lg font-bold text-slate-700 font-arabic" x-text="getPageTitle()"></h1>
                 <div class="flex items-center gap-2 md:gap-3">
+                    <button x-show="userRole === 'doctor'" @click="showDailyRevenueAlert()" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 px-3 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-1.5 transition shadow-sm">
+                        💵 Recette du Jour (المداخيل)
+                    </button>
                     <button @click="openChatModal()" class="bg-blue-50 text-blue-700 hover:bg-blue-100 p-2 px-3 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-1.5 transition border border-blue-200">
                         💬 Chat Messagerie
                     </button>
@@ -126,7 +129,7 @@
                             </div>
                             <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center text-lg">📅</div>
                         </div>
-                        <div class="bg-emerald-50 border-emerald-200 p-5 rounded-xl shadow-sm border flex items-center justify-between">
+                        <div class="bg-emerald-50 border-emerald-200 p-5 rounded-xl shadow-sm border flex items-center justify-between cursor-pointer" @click="showDailyRevenueAlert()">
                             <div>
                                 <p class="text-xs text-emerald-700 font-bold">Recette du Jour (مداخيل اليوم)</p>
                                 <h3 class="text-xl font-bold mt-1 text-emerald-700" x-text="todayRevenue() + ' DZD'"></h3>
@@ -172,7 +175,7 @@
                                         <td class="p-3 md:p-4 text-center space-x-1">
                                             <button x-show="userRole === 'doctor'" @click="openPaymentsModal(patient)" class="bg-emerald-600 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-emerald-700">💳 الأقساط</button>
                                             <button @click="editPatient(patient)" class="bg-amber-500 text-white px-2.5 py-1 rounded-md text-xs font-semibold hover:bg-amber-600">✏️ Modifier</button>
-                                            <button @click="deletePatient(patient.id)" class="bg-red-500 text-white px-2 py-1 rounded-md text-xs hover:bg-red-600">🗑️ Supprimer</button>
+                                            <button @click="deletePatient(patient.id)" class="bg-red-500 text-white px-2.5 py-1 rounded-md text-xs hover:bg-red-600">🗑️ Supprimer</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -289,9 +292,9 @@
         </div>
     </div>
 
-    <!-- 💳 Modal سجل الأقساط -->
+    <!-- 💳 Modal سجل الأقساط (مع خانة الوقت الواضحة) -->
     <div x-show="showPaymentsModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
             <div class="flex justify-between items-center border-b pb-3">
                 <h3 class="text-base font-bold text-slate-800">
                     💳 Dossier & Payements: <span class="text-blue-600" x-text="selectedPatient ? selectedPatient.name : ''"></span>
@@ -304,24 +307,38 @@
                 <span class="text-emerald-600">Payé: <span x-text="(selectedPatient ? getPatientPaidTotal(selectedPatient) : 0) + ' DZD'"></span></span>
             </div>
 
-            <form @submit.prevent="addInstallment()" class="space-y-2 border-t pt-3">
-                <p class="text-xs font-bold text-slate-700">Ajouter une nouvelle tranche (إضافة قسط جديد):</p>
-                <div class="flex gap-2">
-                    <input type="number" x-model="newInstallment.amount" placeholder="Montant DZD" required class="w-1/2 border p-2 rounded-lg text-xs outline-none">
-                    <input type="date" x-model="newInstallment.date" required class="w-1/2 border p-2 rounded-lg text-xs outline-none">
+            <!-- نموذج إضافة قسط مع الوقت -->
+            <form @submit.prevent="addInstallment()" class="space-y-3 bg-blue-50/50 p-3.5 rounded-xl border border-blue-100">
+                <p class="text-xs font-bold text-blue-900">Ajouter une nouvelle tranche (إضافة قسط مع التوقيت):</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-[10px] text-gray-600 mb-0.5">المبلغ (DZD)</label>
+                        <input type="number" x-model="newInstallment.amount" placeholder="Montant" required class="w-full border p-2 rounded-lg text-xs outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-600 mb-0.5">التاريخ</label>
+                        <input type="date" x-model="newInstallment.date" required class="w-full border p-2 rounded-lg text-xs outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-600 mb-0.5">الساعة (Time)</label>
+                        <input type="time" x-model="newInstallment.time" required class="w-full border p-2 rounded-lg text-xs outline-none bg-white">
+                    </div>
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-emerald-700">+ Enregistrer le payement</button>
+                <button type="submit" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm">+ Enregistrer le payement (حفظ القسط)</button>
             </form>
 
             <div class="border-t pt-3">
-                <p class="text-xs font-bold text-slate-700 mb-2">Historique des tranches (تواريخ المبالغ المدفوعة):</p>
-                <div class="max-h-40 overflow-y-auto space-y-1.5">
+                <p class="text-xs font-bold text-slate-700 mb-2">Historique des tranches (الأقساط المدفوعة والتوقيت):</p>
+                <div class="max-h-44 overflow-y-auto space-y-1.5">
                     <template x-for="(pay, idx) in (selectedPatient ? selectedPatient.payments || [] : [])" :key="idx">
-                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border text-xs">
-                            <span class="font-mono text-gray-500" x-text="pay.date"></span>
-                            <span class="font-bold text-emerald-600" x-text="pay.amount + ' DZD'"></span>
-                            <button @click="removeInstallment(idx)" class="text-red-500 hover:text-red-700">🗑️</button>
+                        <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border text-xs">
+                            <span class="font-mono text-gray-700 font-medium" x-text="'📅 ' + pay.date + ' | ⏰ ' + (pay.time || '12:00')"></span>
+                            <span class="font-bold text-emerald-600 text-sm" x-text="pay.amount + ' DZD'"></span>
+                            <button @click="removeInstallment(idx)" class="text-red-500 hover:text-red-700 font-bold p-1">🗑️</button>
                         </div>
+                    </template>
+                    <template x-if="!selectedPatient || !selectedPatient.payments || selectedPatient.payments.length === 0">
+                        <p class="text-center text-gray-400 text-xs py-2">Aucun payement enregistré.</p>
                     </template>
                 </div>
             </div>
@@ -367,7 +384,11 @@
                 
                 showPaymentsModal: false,
                 selectedPatient: null,
-                newInstallment: { amount: '', date: new Date().toISOString().split('T')[0] },
+                newInstallment: { 
+                    amount: '', 
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+                },
 
                 currentDate: new Date(),
                 selectedDate: new Date(),
@@ -424,8 +445,6 @@
                 fetchMessages() {
                     db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
                         const newMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        
-                        // إصدار صوت تنبيه عند وصول رسالة جديدة
                         if (this.lastMessageCount > 0 && newMsgs.length > this.lastMessageCount) {
                             this.playBeepSound();
                         }
@@ -459,7 +478,7 @@
                             senderName: this.userRole === 'doctor' ? 'Médecin 👨‍⚕️' : 'Secrétaire 📋',
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                        this.playBeepSound(); // صوت عند إرسال الرسالة
+                        this.playBeepSound();
                         this.newMessageText = '';
                     }
                 },
@@ -528,6 +547,7 @@
 
                 openPaymentsModal(patient) {
                     this.selectedPatient = patient;
+                    this.newInstallment.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                     this.showPaymentsModal = true;
                 },
 
@@ -540,7 +560,8 @@
                     if (this.newInstallment.amount && this.selectedPatient) {
                         const updatedPayments = [...(this.selectedPatient.payments || []), {
                             amount: Number(this.newInstallment.amount),
-                            date: this.newInstallment.date
+                            date: this.newInstallment.date,
+                            time: this.newInstallment.time || '12:00'
                         }];
 
                         db.collection('patients').doc(this.selectedPatient.id).update({
@@ -549,6 +570,7 @@
 
                         this.selectedPatient.payments = updatedPayments;
                         this.newInstallment.amount = '';
+                        this.newInstallment.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                     }
                 },
 
@@ -573,6 +595,11 @@
                         }
                     });
                     return total;
+                },
+
+                showDailyRevenueAlert() {
+                    const total = this.todayRevenue();
+                    alert(`💵 مجموع مداخيل اليوم (Recette du Jour):\n\n${total} DZD`);
                 },
 
                 todayAppointmentsCount() {
@@ -688,4 +715,3 @@
     </script>
 </body>
 </html>
-
